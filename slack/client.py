@@ -65,8 +65,9 @@ class RealSlackClient:
     @classmethod
     def _normalize_message(cls, raw: dict, channel_id: str) -> dict | None:
         text = raw.get("text", "").strip()
-        # Do not ingest a prior generated digest as if it were a source update.
-        if not text or text.startswith("# 🌅 EverCurrent Daily Digest"):
+        # Slack may serialize the 🌅 emoji as :sunrise:, so match the stable title
+        # rather than an exact Markdown/emoji prefix. This prevents recursive digests.
+        if not text or "EverCurrent Daily Digest" in text:
             return None
         seeded = cls.SEEDED_MESSAGE.match(text)
         if seeded:
