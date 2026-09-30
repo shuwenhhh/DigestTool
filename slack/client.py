@@ -5,10 +5,13 @@ from __future__ import annotations
 import json
 import os
 import re
+import ssl
 from datetime import UTC, datetime
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+
+import certifi
 
 
 class SlackClientError(RuntimeError):
@@ -43,7 +46,8 @@ class RealSlackClient:
             headers={"Authorization": f"Bearer {self.token}"},
         )
         try:
-            with urlopen(request, timeout=10) as response:
+            context = ssl.create_default_context(cafile=certifi.where())
+            with urlopen(request, timeout=10, context=context) as response:
                 payload = json.load(response)
         except HTTPError as error:
             raise SlackClientError(f"Slack returned HTTP {error.code}") from error
