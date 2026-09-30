@@ -81,3 +81,23 @@ python3 demo.py --role electrical_engineer --phase dvt --slack
 The command prints the exact digest locally first and exits with an error unless Slack
 accepts the POST. The webhook URL is read only from the environment and is never logged
 or saved by this project.
+
+## Slack slash-command demo
+
+The `digest-1/` Bolt app is linked to the `Digest` Slack app and exposes a live
+Socket Mode command. Keep it running during the demo:
+
+```bash
+cd digest-1
+slack run --app A0C5HTEUS5U --manifest-source=local
+```
+
+Then, in any Slack channel where the app is available, run:
+
+```text
+/digest
+/digest supply_chain dvt
+```
+
+The command calls the Python generator in the repository root and posts the cited
+Markdown digest to the channel. Use `Ctrl-C` in the terminal to stop the local app.
