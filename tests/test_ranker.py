@@ -35,6 +35,17 @@ class RankerTests(unittest.TestCase):
         self.assertNotEqual(ee_top, sc_top)
         self.assertGreaterEqual(len(set(ee_top) ^ set(sc_top)), 2)
 
+    def test_pm_evt_and_pvt_have_distinct_phase_priorities(self) -> None:
+        _, pm = load_role_weights("pm")
+        _, evt = load_phase_weights("evt")
+        _, pvt = load_phase_weights("pvt")
+        evt_top = [m["id"] for m in rank_messages(self.messages, pm, evt, {})[:5]]
+        pvt_top = [m["id"] for m in rank_messages(self.messages, pm, pvt, {})[:5]]
+        self.assertIn("M007", evt_top)  # DVT-style validation signal is early-stage critical.
+        self.assertIn("M011", evt_top)
+        self.assertTrue({"M005", "M006", "M012"}.issubset(pvt_top))
+        self.assertEqual(set(evt_top) & set(pvt_top), set())
+
 
 if __name__ == "__main__":
     unittest.main()

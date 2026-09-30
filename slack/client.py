@@ -56,11 +56,14 @@ class RealSlackClient:
 
         if not payload.get("ok"):
             raise SlackClientError(payload.get("error", "Unknown Slack API error"))
-        return [
-            message
-            for raw in payload.get("messages", [])
-            if (message := self._normalize_message(raw, channel_id)) is not None
-        ]
+        # Slack returns newest first. Keep the newest occurrence of each stable ID so
+        # accidental repeated `/seed-atlas` calls cannot dominate the ranking.
+        messages_by_id: dict[str, dict] = {}
+        for raw in payload.get("messages", []):
+            message = self._normalize_message(raw, channel_id)
+            if message is not None:
+                messages_by_id.setdefault(message["id"], message)
+        return list(messages_by_id.values())
 
     @classmethod
     def _normalize_message(cls, raw: dict, channel_id: str) -> dict | None:

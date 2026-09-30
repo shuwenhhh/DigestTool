@@ -22,7 +22,7 @@ TAG_KEYWORDS: dict[str, tuple[str, ...]] = {
     "BOM_CHANGE": ("bom", "cost increased", "alternate encoder"),
     "ECO": ("eco-",),
     "BLOCKER": ("blocked", "blocking", "blockers", "unresolved", "only after"),
-    "SCHEDULE": ("scheduled", "by october", "due ", "moved to", "tomorrow", "will proceed"),
+    "SCHEDULE": ("scheduled", "by october", "due ", "moved to"),
     "TEST_RESULT": ("failed", "passed", "validation at", "threshold", "sign-off"),
     "DECISION": ("approved", "decided", "will proceed"),
     "SUPPLY_CHAIN": ("supplier", "vendor", "lead time", "can ship", "harness arrives"),

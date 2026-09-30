@@ -34,6 +34,10 @@ class RealSlackClientTests(unittest.TestCase):
                     "ts": "1760000002.000100",
                     "text": ":sunrise: EverCurrent Daily Digest\nold output",
                 },
+                {
+                    "ts": "1750000000.000100",
+                    "text": "[M001] [Electrical Engineer · Sarah]\nOlder duplicate.",
+                },
             ],
         }
         with patch("slack.client.urlopen", return_value=_Response(payload)):

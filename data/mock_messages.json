@@ -29,7 +29,7 @@
     "author": "Daniel",
     "role": "Mechanical Engineer",
     "timestamp": "2026-09-30T10:05:00+08:00",
-    "text": "Gearbox housing wall thickness changed from 2.0 mm to 2.4 mm."
+    "text": "EVT prototype gearbox housing wall thickness changed from 2.0 mm to 2.4 mm."
   },
   {
     "id": "M005",
@@ -117,7 +117,7 @@
     "author": "Daniel",
     "role": "Mechanical Engineer",
     "timestamp": "2026-09-30T14:36:00+08:00",
-    "text": "CAD release R17 adds a strain-relief feature to the cable exit."
+    "text": "EVT CAD release R17 adds a strain-relief feature to the cable exit."
   },
   {
     "id": "M016",
