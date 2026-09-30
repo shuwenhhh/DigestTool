@@ -1,0 +1,146 @@
+[
+  {
+    "id": "M001",
+    "channel": "project-atlas",
+    "author": "Sarah",
+    "role": "Electrical Engineer",
+    "timestamp": "2026-09-30T09:15:00+08:00",
+    "text": "PCB Rev C failed thermal validation at 75°C, blocking electrical sign-off."
+  },
+  {
+    "id": "M002",
+    "channel": "project-atlas",
+    "author": "Miguel",
+    "role": "Supply Chain",
+    "timestamp": "2026-09-30T09:28:00+08:00",
+    "text": "The IMU supplier increased lead time from 3 to 7 weeks."
+  },
+  {
+    "id": "M003",
+    "channel": "project-atlas",
+    "author": "Priya",
+    "role": "Engineering Manager",
+    "timestamp": "2026-09-30T09:42:00+08:00",
+    "text": "ECO-1842 was approved for the motor driver layout update."
+  },
+  {
+    "id": "M004",
+    "channel": "project-atlas",
+    "author": "Daniel",
+    "role": "Mechanical Engineer",
+    "timestamp": "2026-09-30T10:05:00+08:00",
+    "text": "Gearbox housing wall thickness changed from 2.0 mm to 2.4 mm."
+  },
+  {
+    "id": "M005",
+    "channel": "project-atlas",
+    "author": "Ava",
+    "role": "PM",
+    "timestamp": "2026-09-30T10:20:00+08:00",
+    "text": "DVT build is scheduled for October 8; electrical validation must finish by October 5."
+  },
+  {
+    "id": "M006",
+    "channel": "project-atlas",
+    "author": "Miguel",
+    "role": "Supply Chain",
+    "timestamp": "2026-09-30T10:44:00+08:00",
+    "text": "BOM cost increased by $6.20 after the alternate encoder was added."
+  },
+  {
+    "id": "M007",
+    "channel": "project-atlas",
+    "author": "Sarah",
+    "role": "Electrical Engineer",
+    "timestamp": "2026-09-30T11:02:00+08:00",
+    "text": "Sensor noise exceeded the DVT threshold in 4 of 10 units."
+  },
+  {
+    "id": "M008",
+    "channel": "project-atlas",
+    "author": "Lena",
+    "role": "Quality Engineer",
+    "timestamp": "2026-09-30T11:25:00+08:00",
+    "text": "Incoming inspection found scratches on 12% of anodized covers."
+  },
+  {
+    "id": "M009",
+    "channel": "project-atlas",
+    "author": "Priya",
+    "role": "Engineering Manager",
+    "timestamp": "2026-09-30T11:47:00+08:00",
+    "text": "Team decided to keep the current battery connector for DVT."
+  },
+  {
+    "id": "M010",
+    "channel": "project-atlas",
+    "author": "Daniel",
+    "role": "Mechanical Engineer",
+    "timestamp": "2026-09-30T12:12:00+08:00",
+    "text": "Drop test failed because the rear latch cracked at 1.2 meters."
+  },
+  {
+    "id": "M011",
+    "channel": "project-atlas",
+    "author": "Sarah",
+    "role": "Electrical Engineer",
+    "timestamp": "2026-09-30T13:05:00+08:00",
+    "text": "Motor current ripple passed after the capacitor change on PCB Rev C."
+  },
+  {
+    "id": "M012",
+    "channel": "project-atlas",
+    "author": "Miguel",
+    "role": "Supply Chain",
+    "timestamp": "2026-09-30T13:22:00+08:00",
+    "text": "Backup motor vendor can ship 200 units by October 4."
+  },
+  {
+    "id": "M013",
+    "channel": "project-atlas",
+    "author": "Ava",
+    "role": "PM",
+    "timestamp": "2026-09-30T13:48:00+08:00",
+    "text": "The firmware freeze moved to October 3 due to unresolved CAN bus issues."
+  },
+  {
+    "id": "M014",
+    "channel": "project-atlas",
+    "author": "Sarah",
+    "role": "Electrical Engineer",
+    "timestamp": "2026-09-30T14:10:00+08:00",
+    "text": "CAN bus debugging is blocked until the new harness arrives tomorrow."
+  },
+  {
+    "id": "M015",
+    "channel": "project-atlas",
+    "author": "Daniel",
+    "role": "Mechanical Engineer",
+    "timestamp": "2026-09-30T14:36:00+08:00",
+    "text": "CAD release R17 adds a strain-relief feature to the cable exit."
+  },
+  {
+    "id": "M016",
+    "channel": "project-atlas",
+    "author": "Lena",
+    "role": "Quality Engineer",
+    "timestamp": "2026-09-30T15:02:00+08:00",
+    "text": "Supplier corrective action for the cover scratches is due Friday."
+  },
+  {
+    "id": "M017",
+    "channel": "project-atlas",
+    "author": "Miguel",
+    "role": "Supply Chain",
+    "timestamp": "2026-09-30T15:30:00+08:00",
+    "text": "BOM alternate B for the encoder is ready for engineering review."
+  },
+  {
+    "id": "M018",
+    "channel": "project-atlas",
+    "author": "Priya",
+    "role": "Engineering Manager",
+    "timestamp": "2026-09-30T16:00:00+08:00",
+    "text": "DVT exit review will proceed only after thermal and drop-test blockers close."
+  }
+]
