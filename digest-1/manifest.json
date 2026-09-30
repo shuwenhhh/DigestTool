@@ -29,6 +29,11 @@
         "command": "/digest",
         "description": "Generate a personalized Project Atlas digest",
         "should_escape": false
+      },
+      {
+        "command": "/seed-atlas",
+        "description": "Seed the current channel with Project Atlas updates",
+        "should_escape": false
       }
     ]
   },

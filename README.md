@@ -95,9 +95,13 @@ slack run --app A0C5HTEUS5U --manifest-source=local
 Then, in any Slack channel where the app is available, run:
 
 ```text
+/seed-atlas
 /digest
 /digest supply_chain dvt
 ```
 
-The command calls the Python generator in the repository root and posts the cited
-Markdown digest to the channel. Use `Ctrl-C` in the terminal to stop the local app.
+First invite the app with `/invite @Digest`, then run `/seed-atlas` once to populate
+the channel with 18 Project Atlas updates. `/digest` fetches the actual Slack channel
+history via `conversations.history`, calls the Python generator in the repository root,
+and posts the cited Markdown digest to the channel. Use `Ctrl-C` in the terminal to
+stop the local app.

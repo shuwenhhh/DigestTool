@@ -36,6 +36,8 @@ const digestCommandCallback = async ({ ack, command, respond, logger }) => {
       role,
       '--phase',
       phase,
+      '--slack-channel',
+      command.channel_id,
     ]);
     const digest = stdout.replace(/^Loaded \d+ Slack messages\.\n\n/, '').trim();
     await respond({ response_type: 'in_channel', text: digest });

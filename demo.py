@@ -13,6 +13,7 @@ from digest.generator import generate_digest
 from digest.personalization import apply_feedback, load_preferences, role_preferences
 from digest.ranker import rank_messages
 from digest.tagger import tag_messages
+from slack.client import RealSlackClient, SlackClientError
 from slack.publisher import SlackPublishError, publish_digest
 
 
@@ -20,7 +21,9 @@ ROOT = Path(__file__).resolve().parent
 MESSAGES_PATH = ROOT / "data" / "mock_messages.json"
 
 
-def load_messages() -> list[dict]:
+def load_messages(slack_channel: str | None = None) -> list[dict]:
+    if slack_channel:
+        return RealSlackClient().fetch_messages(slack_channel)
     with MESSAGES_PATH.open(encoding="utf-8") as handle:
         return json.load(handle)
 
@@ -54,12 +57,20 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Publish the generated digest through SLACK_WEBHOOK_URL.",
     )
+    parser.add_argument(
+        "--slack-channel",
+        metavar="CHANNEL_ID",
+        help="Generate from real Slack channel history (requires SLACK_BOT_TOKEN).",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    messages = load_messages()
+    try:
+        messages = load_messages(args.slack_channel)
+    except SlackClientError as error:
+        raise SystemExit(f"Slack history fetch failed: {error}") from error
     tagged_messages = tag_messages(messages)
     print(f"Loaded {len(messages)} Slack messages.")
     if args.show_tags:
