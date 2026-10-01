@@ -1,6 +1,6 @@
 import unittest
 
-from digest.evaluator import evaluate_digest
+from digest_engine.evaluator import evaluate_digest
 
 
 class EvaluatorTests(unittest.TestCase):

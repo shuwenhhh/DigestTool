@@ -1,6 +1,6 @@
 import unittest
 
-from digest.config_loader import load_phase_weights, load_role_weights
+from digest_engine.config_loader import load_phase_weights, load_role_weights
 
 
 class ConfigLoaderTests(unittest.TestCase):

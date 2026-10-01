@@ -1,7 +1,7 @@
 import re
 import unittest
 
-from digest.generator import generate_digest
+from digest_engine.generator import generate_digest
 
 
 class GeneratorTests(unittest.TestCase):

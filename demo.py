@@ -8,12 +8,12 @@ import json
 import os
 from pathlib import Path
 
-from digest.config_loader import load_phase_weights, load_role_weights
-from digest.generator import generate_digest
-from digest.evaluator import evaluate_digest
-from digest.personalization import apply_feedback, feedback_state, load_preferences, role_preferences
-from digest.ranker import rank_messages
-from digest.tagger import tag_messages
+from digest_engine.config_loader import load_phase_weights, load_role_weights
+from digest_engine.generator import generate_digest
+from digest_engine.evaluator import evaluate_digest
+from digest_engine.personalization import apply_feedback, feedback_state, load_preferences, role_preferences
+from digest_engine.ranker import rank_messages
+from digest_engine.tagger import tag_messages
 from slack.client import RealSlackClient, SlackClientError
 from slack.publisher import SlackPublishError, publish_digest
 

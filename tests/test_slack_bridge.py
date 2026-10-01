@@ -5,8 +5,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from digest.evaluator import evaluate_digest
-from digest.personalization import apply_feedback, load_preferences, migrate_feedback_profile
+from digest_engine.evaluator import evaluate_digest
+from digest_engine.personalization import apply_feedback, load_preferences, migrate_feedback_profile
 from slack.bridge import build_digest
 
 
@@ -125,6 +125,43 @@ class BridgeTests(unittest.TestCase):
         self.assertNotEqual(first["top"], changed["top"])
         self.assertEqual(changed["votes"]["M011"], "up")
         self.assertEqual(len(changed["top"]), 5)
+
+    def test_m003_not_relevant_moves_down_and_selected_button_rolls_back(self) -> None:
+        """PM + EVT makes M003 visible, so the downvote/undo loop is demoable."""
+        messages = json.loads((ROOT / "data" / "mock_messages.json").read_text(encoding="utf-8"))
+
+        class FakeClient:
+            stale = False
+
+            def fetch_messages(self, _channel, simulate_failure=False):
+                return messages
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "preferences.json"
+
+            def save_for_test(role, message, direction):
+                return apply_feedback(role, message, direction, path=path)
+
+            with (
+                patch("slack.bridge.RealSlackClient", return_value=FakeClient()),
+                patch("slack.bridge.load_preferences", side_effect=lambda: load_preferences(path)),
+                patch("slack.bridge.apply_feedback", side_effect=save_for_test),
+                patch("slack.bridge.migrate_feedback_profile", side_effect=lambda role, tagged: migrate_feedback_profile(role, tagged, path=path)),
+            ):
+                before = build_digest("C123", "pm", "evt", "U1")
+                rated = build_digest("C123", "pm", "evt", "U1", "M003", "down")
+                next_digest = build_digest("C123", "pm", "evt", "U1")
+                undone = build_digest("C123", "pm", "evt", "U1", "M003", "down")
+                after_undo = build_digest("C123", "pm", "evt", "U1")
+
+        self.assertEqual(before["top"][4]["id"], "M003")
+        self.assertEqual(rated["movement"], {"id": "M003", "direction": "down", "before": 5, "after": 7})
+        self.assertEqual(rated["feedback_notice"], "M003 moved from #5 to #7.")
+        self.assertNotIn("M003", [item["id"] for item in next_digest["top"]])
+        self.assertIn("M003 now ranks #7 (outside the Top 5).", next_digest["adjustment"])
+        self.assertEqual(undone["feedback_notice"], "Feedback for M003 was undone.")
+        self.assertNotIn("M003", undone["votes"])
+        self.assertEqual(after_undo["top"], before["top"])
 
 
 if __name__ == "__main__":

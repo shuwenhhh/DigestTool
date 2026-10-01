@@ -1,6 +1,6 @@
 import unittest
 
-from digest.tagger import TAGS, tag_message
+from digest_engine.tagger import TAGS, tag_message
 
 
 class TaggerTests(unittest.TestCase):

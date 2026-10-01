@@ -1,6 +1,6 @@
 # Ranking and feedback algorithm
 
-This is the algorithm implemented by [`digest/tagger.py`](../digest/tagger.py), [`digest/ranker.py`](../digest/ranker.py), [`digest/personalization.py`](../digest/personalization.py), and [`digest/generator.py`](../digest/generator.py). It is deterministic: the same source messages, role, phase, and saved profile yield the same ordering.
+This is the algorithm implemented by [`digest_engine/tagger.py`](../digest_engine/tagger.py), [`digest_engine/ranker.py`](../digest_engine/ranker.py), [`digest_engine/personalization.py`](../digest_engine/personalization.py), and [`digest_engine/generator.py`](../digest_engine/generator.py). It is deterministic: the same source messages, role, phase, and saved profile yield the same ordering.
 
 ## 1. Normalize and tag
 

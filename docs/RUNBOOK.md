@@ -17,7 +17,7 @@ Do not commit `.env`, bot/app tokens, or webhook URLs. The repository ignores `.
 git clone https://github.com/shuwenhhh/DigestTool.git
 cd DigestTool
 python3 -m pip install -r requirements.txt
-cd digest-1
+cd slack-app
 npm ci
 cd ..
 ```
@@ -39,7 +39,7 @@ The evaluator should report `Citation validity: 5/5` and `Faithfulness: 1.00` on
 Use this if you have access to the existing Slack app `A0C5HTEUS5U` in the EverCurrent workspace. The command and flags are documented in Slack's [`slack run` reference](https://docs.slack.dev/tools/slack-cli/reference/commands/slack_run/). In terminal 1:
 
 ```bash
-cd digest-1
+cd slack-app
 slack login
 slack run --app A0C5HTEUS5U --manifest-source=local
 ```
@@ -48,9 +48,9 @@ Run `slack login` only when not already signed in. Leave `slack run` running. Th
 
 ## 4B. Run your own app with tokens
 
-1. At [Slack app management](https://api.slack.com/apps), create an app **from an app manifest** using [`digest-1/manifest.json`](../digest-1/manifest.json), select your workspace, and install it.
+1. At [Slack app management](https://api.slack.com/apps), create an app **from an app manifest** using [`slack-app/manifest.json`](../slack-app/manifest.json), select your workspace, and install it.
 2. In **Basic Information**, create an app-level token with `connections:write` and copy its `xapp-...` value. In **OAuth & Permissions**, copy the installed bot token (`xoxb-...`). The manifest enables Socket Mode, `/digest`, `/seed-atlas`, and the required public-channel bot scopes. See Slack's [Socket Mode guide](https://docs.slack.dev/tools/bolt-js/concepts/socket-mode/) for the token setup.
-3. From the repository root, create `digest-1/.env` containing only these two lines (replace the placeholders with your actual values):
+3. From the repository root, create `slack-app/.env` containing only these two lines (replace the placeholders with your actual values):
 
    ```text
    SLACK_APP_TOKEN=xapp-YOUR-APP-TOKEN
@@ -60,7 +60,7 @@ Run `slack login` only when not already signed in. Leave `slack run` running. Th
 4. Start the app:
 
    ```bash
-   cd digest-1
+   cd slack-app
    npm start
    ```
 
@@ -92,7 +92,7 @@ In terminal 2, from the repository root:
 ```bash
 python3 -m unittest discover -s tests -v
 python3 demo.py --evaluate
-cd digest-1
+cd slack-app
 npm test
 npm run lint
 ```
@@ -106,7 +106,7 @@ The automated tests use mocks and do not post to Slack. A successful local test 
 | Slack says the command is unavailable | Confirm the app is installed in this workspace, the local process is running, and the manifest contains both slash commands. |
 | Digest says no source messages were found | Run `/seed-atlas` in that channel, then `/digest` in the same channel. |
 | `not_in_channel` or history read failure | Invite the app to the public test channel and confirm its `channels:history` scope. |
-| `SLACK_BOT_TOKEN is not available` | Use `slack run` for the linked app or put `SLACK_BOT_TOKEN` and `SLACK_APP_TOKEN` in `digest-1/.env` for `npm start`. |
+| `SLACK_BOT_TOKEN is not available` | Use `slack run` for the linked app or put `SLACK_BOT_TOKEN` and `SLACK_APP_TOKEN` in `slack-app/.env` for `npm start`. |
 | Old ranking still appears | Generate a **new** Digest; feedback updates the rating state immediately, while ranking is recalculated on the next command. |
 | `⚠️ STALE DATA` appears | Slack history failed and the app used its last channel cache. Restore the connection before presenting the result as current. |
 

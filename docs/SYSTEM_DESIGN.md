@@ -42,7 +42,7 @@ flowchart TB
     Bridge -->|atomic profile update| Profile
 ```
 
-The JavaScript service at [`digest-1/listeners/digest-service.js`](../digest-1/listeners/digest-service.js) invokes `python3 -m slack.bridge` with `execFile`; it does not build a shell command from user input. The bridge returns JSON. The UI translates cited Markdown links into Slack-formatted links and renders per-item rating buttons.
+The JavaScript service at [`slack-app/listeners/digest-service.js`](../slack-app/listeners/digest-service.js) invokes `python3 -m slack.bridge` with `execFile`; it does not build a shell command from user input. The bridge returns JSON. The UI translates cited Markdown links into Slack-formatted links and renders per-item rating buttons.
 
 ## Request and feedback sequence
 

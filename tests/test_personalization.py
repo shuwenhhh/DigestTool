@@ -3,10 +3,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from digest.config_loader import load_phase_weights, load_role_weights
-from digest.personalization import apply_feedback, feedback_state, load_preferences, migrate_feedback_profile, role_preferences
-from digest.ranker import rank_messages
-from digest.tagger import tag_messages
+from digest_engine.config_loader import load_phase_weights, load_role_weights
+from digest_engine.personalization import apply_feedback, feedback_state, load_preferences, migrate_feedback_profile, role_preferences
+from digest_engine.ranker import rank_messages
+from digest_engine.tagger import tag_messages
 
 
 ROOT = Path(__file__).resolve().parents[1]

@@ -2,9 +2,9 @@ import json
 import unittest
 from pathlib import Path
 
-from digest.config_loader import load_phase_weights, load_role_weights
-from digest.ranker import rank_messages, score_message
-from digest.tagger import tag_messages
+from digest_engine.config_loader import load_phase_weights, load_role_weights
+from digest_engine.ranker import rank_messages, score_message
+from digest_engine.tagger import tag_messages
 
 
 ROOT = Path(__file__).resolve().parents[1]

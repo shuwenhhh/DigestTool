@@ -14,13 +14,13 @@ Requirements: Python 3.11+, Node.js 20+, the [Slack CLI](https://docs.slack.dev/
 
 ```bash
 python3 -m pip install -r requirements.txt
-cd digest-1 && npm ci && cd ..
+cd slack-app && npm ci && cd ..
 ```
 
 For the live demo, sign in with `slack login` if needed and keep the local Socket Mode app running in a terminal:
 
 ```bash
-cd digest-1
+cd slack-app
 slack run --app A0C5HTEUS5U --manifest-source=local
 ```
 
@@ -67,7 +67,7 @@ flowchart LR
     V --> F
 ```
 
-`digest-1/` is the JavaScript Slack Bolt app. It calls `slack/bridge.py` as a local Python process; the bridge uses `slack/client.py` and the `digest/` tagging, ranking, generation, and personalization modules. `demo.py` exercises the same engine from the terminal.
+`slack-app/` is the JavaScript Slack Bolt app. It calls `slack/bridge.py` as a local Python process; the bridge uses `slack/client.py` and the `digest_engine/` tagging, ranking, generation, and personalization modules. `demo.py` exercises the same engine from the terminal.
 
 The [system design document](docs/SYSTEM_DESIGN.md) also shows the feedback sequence, persistence, fallback behavior, and trust boundaries.
 
@@ -83,7 +83,7 @@ See [Algorithm](docs/ALGORITHM.md) for the exact scoring formula, tie-breaking, 
 
 ## 6. Adaptive Feedback
 
-A 👍 or 👎 changes the selected item's broad tag affinities by only ±0.01, its explicit boost by ±0.15, and its topic boost by ±0.04 for a generic category or ±0.15 for a narrowly identified topic, within bounds. This keeps the rated item responsive without making an entire category disappear. Distinct blocker topics (thermal validation, CAN bus, firmware freeze, DVT exit review) prevent a 👎 on one blocker from demoting the entire DVT blocker category. M007 is classified as the specific `sensor-noise` topic, so its feedback also affects future sensor-noise updates. Existing votes are migrated to the narrower weights once, without clearing a user's feedback. Repeating the same vote undoes it; clicking the opposite vote switches it. Interactive Slack profiles are keyed by Slack user ID plus role, so one person's click does not change another person's ranking. The private Digest updates its selected state immediately, while ranking changes appear on the next `/digest`. Feedback is persisted in ignored `data/runtime/preferences.json`; `data/preferences.json` provides only initial values. The local CLI feedback demo is `python3 demo.py --feedback M011:up --role electrical_engineer`.
+A 👍 or 👎 changes the selected item's broad tag affinities by only ±0.01, its explicit boost by ±0.15, and its topic boost by ±0.04 for a generic category or ±0.15 for a narrowly identified topic, within bounds. This keeps the rated item responsive without making an entire category disappear. Distinct blocker topics (thermal validation, CAN bus, firmware freeze, DVT exit review) prevent a 👎 on one blocker from demoting the entire DVT blocker category. M007 is classified as the specific `sensor-noise` topic, so its feedback also affects future sensor-noise updates. Existing votes are migrated to the narrower weights once, without clearing a user's feedback. Repeating the same vote undoes it; clicking the opposite vote switches it. Interactive Slack profiles are keyed by Slack user ID plus role, so one person's click does not change another person's ranking. The private Digest updates its selected state immediately, while ranking changes appear on the next `/digest`. Feedback is persisted in ignored `data/runtime/preferences.json`; `data/preferences.json` provides only initial values. For a compact rollback demo, use the PM + EVT view where M003 is initially #5: click **👎 Not relevant · M003**, run `/digest pm evt` again to see `M003 moved from #5 to #7` and leave the Top 5, then click the selected M003 button again to undo and restore the original ranking. The local CLI feedback demo is `python3 demo.py --feedback M011:up --role electrical_engineer`.
 
 ## 7. Grounding / Citations
 
@@ -103,7 +103,7 @@ This requires `SLACK_BOT_TOKEN` in the environment; `slack run` supplies it to t
 
 ```bash
 python3 -m unittest discover -s tests -v
-cd digest-1 && npm test && npm run lint
+cd slack-app && npm test && npm run lint
 python3 demo.py --evaluate
 ```
 
