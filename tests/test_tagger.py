@@ -20,6 +20,17 @@ class TaggerTests(unittest.TestCase):
         )
         self.assertIn("SUPPLY_CHAIN", tagged["tags"])
 
+    def test_blocker_subtopics_do_not_all_share_one_topic(self) -> None:
+        examples = {
+            "M001": ("PCB Rev C failed thermal validation at 75°C, blocking electrical sign-off.", "thermal-validation"),
+            "M013": ("The firmware freeze moved to October 3 due to unresolved CAN bus issues.", "firmware-freeze"),
+            "M014": ("CAN bus debugging is blocked until the new harness arrives tomorrow.", "can-bus"),
+            "M018": ("DVT exit review will proceed only after thermal and drop-test blockers close.", "dvt-exit-review"),
+        }
+        for message_id, (body, topic) in examples.items():
+            with self.subTest(message_id=message_id):
+                self.assertEqual(tag_message({"id": message_id, "text": body})["topic"], topic)
+
 
 if __name__ == "__main__":
     unittest.main()

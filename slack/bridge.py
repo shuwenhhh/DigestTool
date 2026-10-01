@@ -7,7 +7,7 @@ import json
 
 from digest.config_loader import load_phase_weights, load_role_weights
 from digest.generator import generate_digest
-from digest.personalization import apply_feedback, feedback_state, load_preferences, role_preferences
+from digest.personalization import apply_feedback, feedback_state, load_preferences, migrate_feedback_profile, role_preferences
 from digest.ranker import rank_messages
 from digest.tagger import tag_messages
 from slack.client import RealSlackClient, SlackClientError
@@ -30,6 +30,7 @@ def build_digest(
     role_name, role_weights = load_role_weights(role)
     phase_name, phase_weights = load_phase_weights(phase)
     profile_key = f"{user}:{role}"
+    migrate_feedback_profile(profile_key, tagged)
 
     def rank() -> list[dict]:
         stored = load_preferences()

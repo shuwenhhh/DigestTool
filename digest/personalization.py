@@ -11,9 +11,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PREFERENCES_PATH = ROOT / "data" / "runtime" / "preferences.json"
 INITIAL_PREFERENCES_PATH = ROOT / "data" / "preferences.json"
-TAG_STEP = 0.15
+TAG_STEP = 0.03
 MESSAGE_STEP = 0.15
-TOPIC_STEP = 0.35
+TOPIC_STEP = 0.15
+LEGACY_TAG_STEP = 0.15
+LEGACY_TOPIC_STEP = 0.35
 MIN_TAG_WEIGHT = 0.4
 MAX_TAG_WEIGHT = 1.6
 MIN_MESSAGE_BOOST = -0.45
@@ -54,6 +56,60 @@ def feedback_state(data: dict, role: str) -> tuple[dict[str, str], dict[str, flo
     )
 
 
+def _legacy_topic(message: dict) -> str:
+    if "sensor noise" in message["text"].lower():
+        return "sensor-noise"
+    tags = message.get("tags", [])
+    return tags[0].lower().replace("_", "-") if tags else "general"
+
+
+def migrate_feedback_profile(
+    role: str,
+    messages: list[dict],
+    path: Path = DEFAULT_PREFERENCES_PATH,
+) -> bool:
+    """Reweight existing votes once without discarding earlier user preferences."""
+    data = load_preferences(path)
+    profile = data.get(role)
+    if not profile or not profile.get("_votes"):
+        return False
+    by_id = {message["id"]: message for message in messages}
+    migrated = set(profile.get("_migrated_vote_ids", []))
+    changed = False
+    raw_tags = profile.setdefault("_raw_tag_weights", {})
+    raw_topics = profile.setdefault("_raw_topic_boosts", {})
+    topics = profile.setdefault("_topic_boosts", {})
+    for message_id, direction in profile["_votes"].items():
+        if message_id in migrated or message_id not in by_id:
+            continue
+        message = by_id[message_id]
+        sign = 1 if direction == "up" else -1
+        for tag in message.get("tags", []):
+            raw = round(float(raw_tags.get(tag, profile.get(tag, 1.0))) + (TAG_STEP - LEGACY_TAG_STEP) * sign, 2)
+            raw_tags[tag] = raw
+            profile[tag] = round(min(MAX_TAG_WEIGHT, max(MIN_TAG_WEIGHT, raw)), 2)
+        old_topic = _legacy_topic(message)
+        new_topic = message.get("topic", old_topic)
+        raw_old = round(float(raw_topics.get(old_topic, topics.get(old_topic, 0.0))) - LEGACY_TOPIC_STEP * sign, 2)
+        raw_topics[old_topic] = raw_old
+        if raw_old:
+            topics[old_topic] = round(min(MAX_TOPIC_BOOST, max(MIN_TOPIC_BOOST, raw_old)), 2)
+        else:
+            topics.pop(old_topic, None)
+        raw_new = round(float(raw_topics.get(new_topic, topics.get(new_topic, 0.0))) + TOPIC_STEP * sign, 2)
+        raw_topics[new_topic] = raw_new
+        if raw_new:
+            topics[new_topic] = round(min(MAX_TOPIC_BOOST, max(MIN_TOPIC_BOOST, raw_new)), 2)
+        else:
+            topics.pop(new_topic, None)
+        migrated.add(message_id)
+        changed = True
+    if changed:
+        profile["_migrated_vote_ids"] = sorted(migrated)
+        _save_preferences(data, path)
+    return changed
+
+
 def _save_preferences(data: dict, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(
@@ -91,6 +147,9 @@ def apply_feedback(
         votes[message["id"]] = selected
     else:
         votes.pop(message["id"], None)
+    migrated = set(profile.get("_migrated_vote_ids", []))
+    migrated.add(message["id"])
+    profile["_migrated_vote_ids"] = sorted(migrated)
     changes: list[tuple[str, float, float]] = []
     raw_tags = profile.setdefault("_raw_tag_weights", {})
     for tag in message.get("tags", []):

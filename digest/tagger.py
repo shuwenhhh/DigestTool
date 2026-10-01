@@ -63,7 +63,18 @@ def tag_message(message: dict) -> dict:
         for tag in TAGS
         if any(keyword in lower for keyword in TAG_KEYWORDS[tag])
     ]
-    topic = "sensor-noise" if "sensor noise" in lower else (tags[0].lower().replace("_", "-") if tags else "general")
+    specific_topics = (
+        ("sensor noise", "sensor-noise"),
+        ("exit review", "dvt-exit-review"),
+        ("firmware freeze", "firmware-freeze"),
+        ("can bus", "can-bus"),
+        ("thermal", "thermal-validation"),
+        ("drop test", "drop-test"),
+    )
+    topic = next(
+        (name for keyword, name in specific_topics if keyword in lower),
+        tags[0].lower().replace("_", "-") if tags else "general",
+    )
     return {**message, "tags": tags, "topic": topic, "urgency": _urgency(message["text"])}
 
 

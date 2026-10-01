@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from digest.evaluator import evaluate_digest
-from digest.personalization import apply_feedback, load_preferences
+from digest.personalization import apply_feedback, load_preferences, migrate_feedback_profile
 from slack.bridge import build_digest
 
 
@@ -33,6 +33,7 @@ class BridgeTests(unittest.TestCase):
                 patch("slack.bridge.RealSlackClient", return_value=FakeClient()),
                 patch("slack.bridge.load_preferences", side_effect=lambda: load_preferences(path)),
                 patch("slack.bridge.apply_feedback", side_effect=save_for_test),
+                patch("slack.bridge.migrate_feedback_profile", side_effect=lambda role, tagged: migrate_feedback_profile(role, tagged, path=path)),
             ):
                 before = build_digest("C123", "electrical_engineer", "dvt", "U1")
                 rated = build_digest("C123", "electrical_engineer", "dvt", "U1", "M007", "down")
@@ -62,7 +63,10 @@ class BridgeTests(unittest.TestCase):
             def fetch_messages(self, _channel, simulate_failure=False):
                 return messages
 
-        with patch("slack.bridge.RealSlackClient", return_value=FakeClient()):
+        with (
+            patch("slack.bridge.RealSlackClient", return_value=FakeClient()),
+            patch("slack.bridge.migrate_feedback_profile", return_value=False),
+        ):
             result = build_digest("C123", "electrical_engineer", "dvt", "U1")
 
         evaluation = evaluate_digest(result["digest"], messages)
@@ -79,7 +83,10 @@ class BridgeTests(unittest.TestCase):
             def fetch_messages(self, _channel, simulate_failure=False):
                 return messages
 
-        with patch("slack.bridge.RealSlackClient", return_value=StaleClient()):
+        with (
+            patch("slack.bridge.RealSlackClient", return_value=StaleClient()),
+            patch("slack.bridge.migrate_feedback_profile", return_value=False),
+        ):
             result = build_digest("C123", "pm", "pvt", "U1")
 
         self.assertTrue(result["stale"])
@@ -104,6 +111,7 @@ class BridgeTests(unittest.TestCase):
                 patch("slack.bridge.RealSlackClient", return_value=FakeClient()),
                 patch("slack.bridge.load_preferences", side_effect=lambda: load_preferences(path)),
                 patch("slack.bridge.apply_feedback", side_effect=save_for_test),
+                patch("slack.bridge.migrate_feedback_profile", side_effect=lambda role, tagged: migrate_feedback_profile(role, tagged, path=path)),
             ):
                 first = build_digest("C123", "electrical_engineer", "dvt", "U1")
                 changed = build_digest("C123", "electrical_engineer", "dvt", "U1", "M011", "up")
