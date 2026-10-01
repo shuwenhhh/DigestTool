@@ -2,17 +2,19 @@
 
 A runnable, role- and project-phase-aware Slack digest prototype for Project Atlas. It ranks real channel updates, produces a source-cited Top 5, and adapts each user's future digests from 👍/👎 feedback.
 
+Start here: [Run and demo the app](docs/RUNBOOK.md) · [System design](docs/SYSTEM_DESIGN.md) · [Ranking algorithm](docs/ALGORITHM.md).
+
 ## 1. Problem
 
 Project updates arrive as a noisy Slack stream. An Electrical Engineer, Supply Chain lead, and PM need different highlights; priorities also change between EVT (engineering validation), DVT (design validation), and PVT (production validation). The prototype makes those choices explicit and testable.
 
 ## 2. Demo
 
-Requirements: Python 3.10+, Node.js, the [Slack CLI](https://docs.slack.dev/tools/slack-cli/), and access to the linked Digest app/workspace. Install dependencies once:
+Requirements: Python 3.11+, Node.js 20+, the [Slack CLI](https://docs.slack.dev/tools/slack-cli/) for the linked-app path, and access to the Digest workspace. The [runbook](docs/RUNBOOK.md) also explains how to use your own app with tokens instead of the CLI. Install dependencies once:
 
 ```bash
 python3 -m pip install -r requirements.txt
-cd digest-1 && npm install && cd ..
+cd digest-1 && npm ci && cd ..
 ```
 
 For the live demo, sign in with `slack login` if needed and keep the local Socket Mode app running in a terminal:
@@ -48,21 +50,26 @@ The optional Incoming Webhook publisher is separate from the interactive Slack a
 
 ## 3. Architecture
 
-```text
-Slack channel history ─┐
-18-message mock data ───┴─> Normalize/dedupe ─> Tag + urgency
-                                                │
-Role weights ───────────────┐                   ▼
-Phase weights ──────────────┼──────────────> Rank messages ─> Top 5
-Per-user preferences ───────┘                        │           │
-                                                     │           ▼
-Private Digest 👍/👎 ─> preference update ────────────┘    Cited digest ─> Slack
-                                                          │
-                                                          ▼
-                                                Citation/faithfulness check
+```mermaid
+flowchart LR
+    U[Slack user] --> C[Slash command /digest]
+    C --> B[Bolt app in Socket Mode]
+    B --> P[Python bridge]
+    P --> H[Slack channel history]
+    H --> T[Normalize, deduplicate, tag]
+    W[Role and phase weights] --> R[Rank]
+    F[Per-user feedback profile] --> R
+    T --> R
+    R --> D[Top 5 with source links]
+    D --> B
+    B --> U
+    U --> V[Private thumbs up or down]
+    V --> F
 ```
 
 `digest-1/` is the JavaScript Slack Bolt app. It calls `slack/bridge.py` as a local Python process; the bridge uses `slack/client.py` and the `digest/` tagging, ranking, generation, and personalization modules. `demo.py` exercises the same engine from the terminal.
+
+The [system design document](docs/SYSTEM_DESIGN.md) also shows the feedback sequence, persistence, fallback behavior, and trust boundaries.
 
 ## 4. Message Tagging
 
@@ -71,6 +78,8 @@ The deterministic tagger recognizes `BOM_CHANGE`, `ECO`, `BLOCKER`, `SCHEDULE`, 
 ## 5. Personalization
 
 `config/roles.json` and `config/phases.json` define role and phase weights. For a message's strongest tag, the ranking score is `role_weight × phase_weight × preference_weight + 0.3 × urgency + explicit_item_boost + topic_boost`. Inspect weights with `python3 demo.py --role electrical_engineer --phase dvt --show-weights`; inspect the ordered IDs and reasons with `--show-ranking`. The mock data and phase weights make both role and EVT/DVT/PVT differences visible.
+
+See [Algorithm](docs/ALGORITHM.md) for the exact scoring formula, tie-breaking, feedback increments, worked example, and evaluation limits.
 
 ## 6. Adaptive Feedback
 
