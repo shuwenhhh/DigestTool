@@ -118,9 +118,9 @@ class BridgeTests(unittest.TestCase):
                 next_digest = build_digest("C123", "electrical_engineer", "dvt", "U1")
                 other = build_digest("C123", "electrical_engineer", "dvt", "U2")
 
-        self.assertEqual(changed["movement"], {"id": "M011", "direction": "up", "before": 4, "after": 1})
-        self.assertEqual(changed["feedback_notice"], "M011 moved from #4 to #1.")
-        self.assertIn("M011 now ranks #1.", next_digest["adjustment"])
+        self.assertEqual(changed["movement"], {"id": "M011", "direction": "up", "before": 4, "after": 2})
+        self.assertEqual(changed["feedback_notice"], "M011 moved from #4 to #2.")
+        self.assertIn("M011 now ranks #2.", next_digest["adjustment"])
         self.assertEqual(first["top"], other["top"])
         self.assertNotEqual(first["top"], changed["top"])
         self.assertEqual(changed["votes"]["M011"], "up")

@@ -45,8 +45,8 @@ class PersonalizationTests(unittest.TestCase):
             )
             after_rank = [item["id"] for item in after].index("M011") + 1
 
-            self.assertIn(("TEST_RESULT", 1.0, 1.03), changes)
-            self.assertEqual(after_prefs["TEST_RESULT"], 1.03)
+            self.assertIn(("TEST_RESULT", 1.0, 1.01), changes)
+            self.assertEqual(after_prefs["TEST_RESULT"], 1.01)
             self.assertEqual(after_boosts["M011"], 0.15)
             self.assertEqual(before_rank, 4)
             self.assertEqual(after_rank, 2)
@@ -58,7 +58,7 @@ class PersonalizationTests(unittest.TestCase):
             apply_feedback("supply_chain", message, "down", path=path)
             preferences, boosts = role_preferences(load_preferences(path), "supply_chain")
             votes, topics, _ = feedback_state(load_preferences(path), "supply_chain")
-            self.assertEqual((preferences["SUPPLY_CHAIN"], boosts["M006"], topics["supply-chain"]), (0.97, -0.15, -0.15))
+            self.assertEqual((preferences["SUPPLY_CHAIN"], boosts["M006"], topics["supply-chain"]), (0.99, -0.15, -0.04))
             self.assertEqual(votes["M006"], "down")
 
             apply_feedback("supply_chain", message, "down", path=path)
@@ -75,14 +75,14 @@ class PersonalizationTests(unittest.TestCase):
             apply_feedback("supply_chain", message, "down", path=path)
             votes, topics, _ = feedback_state(load_preferences(path), "supply_chain")
             self.assertEqual(votes["M006"], "down")
-            self.assertEqual(topics["supply-chain"], -0.15)
+            self.assertEqual(topics["supply-chain"], -0.04)
 
     def test_undo_after_weight_saturation_restores_correct_value(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "preferences.json"
             messages = [
                 {"id": f"M{i:03d}", "tags": ["TEST_RESULT"], "topic": "sensor-noise"}
-                for i in range(1, 23)
+                for i in range(1, 63)
             ]
             for message in messages:
                 apply_feedback("U1:electrical_engineer", message, "up", path=path)
@@ -94,7 +94,7 @@ class PersonalizationTests(unittest.TestCase):
             self.assertEqual(preferences["TEST_RESULT"], 1.6)
             apply_feedback("U1:electrical_engineer", messages[2], "up", path=path)
             preferences, _ = role_preferences(load_preferences(path), "U1:electrical_engineer")
-            self.assertEqual(preferences["TEST_RESULT"], 1.57)
+            self.assertEqual(preferences["TEST_RESULT"], 1.59)
 
     def test_pm_dvt_downvote_does_not_demote_unrated_blockers(self) -> None:
         messages = tag_messages(json.loads((ROOT / "data" / "mock_messages.json").read_text(encoding="utf-8")))
@@ -117,8 +117,8 @@ class PersonalizationTests(unittest.TestCase):
 
         self.assertEqual([item["id"] for item in before[:4]], ["M001", "M014", "M013", "M018"])
         self.assertEqual([item["id"] for item in after[:3]], ["M001", "M014", "M013"])
-        self.assertEqual(next(index for index, item in enumerate(after, 1) if item["id"] == "M018"), 7)
-        self.assertEqual([item["id"] for item in after[:5]], ["M001", "M014", "M013", "M016", "M005"])
+        self.assertEqual(next(index for index, item in enumerate(after, 1) if item["id"] == "M018"), 5)
+        self.assertEqual([item["id"] for item in after[:5]], ["M001", "M014", "M013", "M016", "M018"])
 
     def test_legacy_vote_is_migrated_once_without_losing_vote(self) -> None:
         messages = tag_messages(json.loads((ROOT / "data" / "mock_messages.json").read_text(encoding="utf-8")))
@@ -131,15 +131,59 @@ class PersonalizationTests(unittest.TestCase):
                 "_raw_topic_boosts": {"blocker": -0.35},
                 "_message_boosts": {"M018": -0.15},
                 "_votes": {"M018": "down"},
+                "_last_feedback": {"id": "M018", "topic": "blocker", "state": "down"},
             }}), encoding="utf-8")
             self.assertTrue(migrate_feedback_profile("U1:pm", messages, path=path))
             profile = load_preferences(path)["U1:pm"]
-            self.assertEqual((profile["BLOCKER"], profile["DECISION"]), (0.97, 0.97))
+            self.assertEqual((profile["BLOCKER"], profile["DECISION"]), (0.99, 0.99))
             self.assertEqual(profile["_topic_boosts"], {"dvt-exit-review": -0.15})
             self.assertEqual(profile["_message_boosts"], {"M018": -0.15})
             self.assertEqual(profile["_votes"], {"M018": "down"})
+            self.assertEqual(profile["_last_feedback"]["topic"], "dvt-exit-review")
+            self.assertEqual(profile["_v2_vote_ids"], ["M018"])
             self.assertFalse(migrate_feedback_profile("U1:pm", messages, path=path))
             self.assertEqual(load_preferences(path)["U1:pm"], profile)
+
+    def test_v1_vote_migrates_to_smaller_broad_category_weight(self) -> None:
+        messages = tag_messages(json.loads((ROOT / "data" / "mock_messages.json").read_text(encoding="utf-8")))
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "preferences.json"
+            path.write_text(json.dumps({"U1:pm": {
+                "SCHEDULE": 1.03,
+                "_raw_tag_weights": {"SCHEDULE": 1.03},
+                "_topic_boosts": {"schedule": 0.15},
+                "_raw_topic_boosts": {"schedule": 0.15},
+                "_message_boosts": {"M005": 0.15},
+                "_votes": {"M005": "up"},
+                "_migrated_vote_ids": ["M005"],
+            }}), encoding="utf-8")
+            self.assertTrue(migrate_feedback_profile("U1:pm", messages, path=path))
+            profile = load_preferences(path)["U1:pm"]
+            self.assertEqual(profile["SCHEDULE"], 1.01)
+            self.assertEqual(profile["_topic_boosts"], {"schedule": 0.04})
+            self.assertEqual(profile["_message_boosts"], {"M005": 0.15})
+            self.assertFalse(migrate_feedback_profile("U1:pm", messages, path=path))
+
+    def test_broad_category_vote_barely_changes_other_items(self) -> None:
+        messages = tag_messages(json.loads((ROOT / "data" / "mock_messages.json").read_text(encoding="utf-8")))
+        _, role_weights = load_role_weights("pm")
+        _, phase_weights = load_phase_weights("dvt")
+        before = rank_messages(messages, role_weights, phase_weights, {})
+        before_scores = {message["id"]: message["score"] for message in before}
+        for target in (message for message in messages if not message["topic_is_specific"]):
+            for direction in ("up", "down"):
+                with self.subTest(message_id=target["id"], direction=direction):
+                    with tempfile.TemporaryDirectory() as directory:
+                        path = Path(directory) / "preferences.json"
+                        apply_feedback("U1:pm", target, direction, path=path)
+                        stored = load_preferences(path)
+                        preferences, boosts = role_preferences(stored, "U1:pm")
+                        _, topics, _ = feedback_state(stored, "U1:pm")
+                        after = rank_messages(messages, role_weights, phase_weights, preferences, boosts, topics)
+                    after_scores = {message["id"]: message["score"] for message in after}
+                    for message in messages:
+                        if message["id"] != target["id"]:
+                            self.assertLessEqual(abs(before_scores[message["id"]] - after_scores[message["id"]]), 0.06)
 
 
 if __name__ == "__main__":

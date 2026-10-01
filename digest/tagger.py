@@ -71,11 +71,15 @@ def tag_message(message: dict) -> dict:
         ("thermal", "thermal-validation"),
         ("drop test", "drop-test"),
     )
-    topic = next(
-        (name for keyword, name in specific_topics if keyword in lower),
-        tags[0].lower().replace("_", "-") if tags else "general",
-    )
-    return {**message, "tags": tags, "topic": topic, "urgency": _urgency(message["text"])}
+    matched_topic = next((name for keyword, name in specific_topics if keyword in lower), None)
+    topic = matched_topic or (tags[0].lower().replace("_", "-") if tags else "general")
+    return {
+        **message,
+        "tags": tags,
+        "topic": topic,
+        "topic_is_specific": matched_topic is not None,
+        "urgency": _urgency(message["text"]),
+    }
 
 
 def tag_messages(messages: Iterable[dict]) -> list[dict]:

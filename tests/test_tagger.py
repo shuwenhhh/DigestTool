@@ -29,7 +29,14 @@ class TaggerTests(unittest.TestCase):
         }
         for message_id, (body, topic) in examples.items():
             with self.subTest(message_id=message_id):
-                self.assertEqual(tag_message({"id": message_id, "text": body})["topic"], topic)
+                tagged = tag_message({"id": message_id, "text": body})
+                self.assertEqual(tagged["topic"], topic)
+                self.assertTrue(tagged["topic_is_specific"])
+
+    def test_generic_topic_is_marked_broad(self) -> None:
+        tagged = tag_message({"id": "M005", "text": "DVT build is scheduled for October 8."})
+        self.assertEqual(tagged["topic"], "schedule")
+        self.assertFalse(tagged["topic_is_specific"])
 
 
 if __name__ == "__main__":
