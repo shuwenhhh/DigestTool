@@ -14,6 +14,7 @@ def score_message(
     phase_weights: Mapping[str, float],
     preferences: Mapping[str, float],
     message_boosts: Mapping[str, float] | None = None,
+    topic_boosts: Mapping[str, float] | None = None,
 ) -> dict:
     """Score a tagged message using its strongest tag signal."""
     tags = message.get("tags", [])
@@ -28,13 +29,15 @@ def score_message(
     else:
         score_tag, relevance = "UNTAGGED", 0.0
     explicit_feedback = (message_boosts or {}).get(message["id"], 0.0)
-    score = relevance + float(message.get("urgency", 0.0)) * 0.3 + explicit_feedback
+    topic_feedback = (topic_boosts or {}).get(message.get("topic", "general"), 0.0)
+    score = relevance + float(message.get("urgency", 0.0)) * 0.3 + explicit_feedback + topic_feedback
     return {
         **message,
         "score": round(score, 4),
         "score_tag": score_tag,
         "tag_scores": {tag: round(value, 4) for tag, value in tag_scores.items()},
         "feedback_boost": explicit_feedback,
+        "topic_boost": topic_feedback,
     }
 
 
@@ -44,10 +47,11 @@ def rank_messages(
     phase_weights: Mapping[str, float],
     preferences: Mapping[str, float],
     message_boosts: Mapping[str, float] | None = None,
+    topic_boosts: Mapping[str, float] | None = None,
 ) -> list[dict]:
     scored = [
         score_message(
-            message, role_weights, phase_weights, preferences, message_boosts
+            message, role_weights, phase_weights, preferences, message_boosts, topic_boosts
         )
         for message in messages
     ]

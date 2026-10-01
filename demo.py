@@ -11,7 +11,7 @@ from pathlib import Path
 from digest.config_loader import load_phase_weights, load_role_weights
 from digest.generator import generate_digest
 from digest.evaluator import evaluate_digest
-from digest.personalization import apply_feedback, load_preferences, role_preferences
+from digest.personalization import apply_feedback, feedback_state, load_preferences, role_preferences
 from digest.ranker import rank_messages
 from digest.tagger import tag_messages
 from slack.client import RealSlackClient, SlackClientError
@@ -112,12 +112,14 @@ def main() -> None:
         preferences, message_boosts = role_preferences(
             load_preferences(), args.role
         )
+        _, topic_boosts, _ = feedback_state(load_preferences(), args.role)
         ranked = rank_messages(
             tagged_messages,
             role_weights,
             phase_weights,
             preferences,
             message_boosts,
+            topic_boosts,
         )
         print(f"\n{role_name} · {phase_name} Top 5")
         for index, item in enumerate(ranked[:5], start=1):
@@ -141,12 +143,14 @@ def main() -> None:
         phase_name, phase_weights = load_phase_weights(args.phase)
         stored = load_preferences()
         before_preferences, before_boosts = role_preferences(stored, args.role)
+        _, before_topics, _ = feedback_state(stored, args.role)
         before = rank_messages(
             tagged_messages,
             role_weights,
             phase_weights,
             before_preferences,
             before_boosts,
+            before_topics,
         )
         before_position = next(
             index for index, item in enumerate(before, start=1) if item["id"] == message_id
@@ -154,15 +158,16 @@ def main() -> None:
         changes = apply_feedback(
             args.role, message_lookup[message_id], direction
         )
-        after_preferences, after_boosts = role_preferences(
-            load_preferences(), args.role
-        )
+        after_stored = load_preferences()
+        after_preferences, after_boosts = role_preferences(after_stored, args.role)
+        _, after_topics, _ = feedback_state(after_stored, args.role)
         after = rank_messages(
             tagged_messages,
             role_weights,
             phase_weights,
             after_preferences,
             after_boosts,
+            after_topics,
         )
         after_position = next(
             index for index, item in enumerate(after, start=1) if item["id"] == message_id
@@ -181,12 +186,14 @@ def main() -> None:
         preferences, message_boosts = role_preferences(
             load_preferences(), args.role
         )
+        _, topic_boosts, _ = feedback_state(load_preferences(), args.role)
         ranked = rank_messages(
             tagged_messages,
             role_weights,
             phase_weights,
             preferences,
             message_boosts,
+            topic_boosts,
         )
         digest = generate_digest(ranked[:5], role_name, phase_name)
         if stale:

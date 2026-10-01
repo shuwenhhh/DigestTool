@@ -1,4 +1,4 @@
-import { generate, postDigest } from '../digest-service.js';
+import { generate, privateDigestResponse } from '../digest-service.js';
 
 const roleAliases = new Map([
   ['electrical_engineer', 'electrical_engineer'],
@@ -24,7 +24,7 @@ const parseProfile = (text) => {
   return { role: roleAliases.get(roleInput), phase };
 };
 
-const digestCommandCallback = async ({ ack, command, client, respond, logger }) => {
+const digestCommandCallback = async ({ ack, command, respond, logger }) => {
   await ack();
   const { role, phase } = parseProfile(command.text);
 
@@ -40,7 +40,7 @@ const digestCommandCallback = async ({ ack, command, client, respond, logger }) 
       phase,
       user: command.user_id,
     });
-    await postDigest(client, command.channel_id, result);
+    await respond(privateDigestResponse(result));
   } catch (error) {
     logger.error(error);
     await respond({

@@ -13,6 +13,42 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class BridgeTests(unittest.TestCase):
+    def test_sensor_noise_downvote_changes_next_digest_only_for_clicker(self) -> None:
+        messages = json.loads((ROOT / "data" / "mock_messages.json").read_text(encoding="utf-8"))
+
+        class FakeClient:
+            stale = False
+
+            def fetch_messages(self, _channel, simulate_failure=False):
+                return messages
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "preferences.json"
+
+            def save_for_test(role, message, direction):
+                return apply_feedback(role, message, direction, path=path)
+
+            with (
+                patch("slack.bridge.RealSlackClient", return_value=FakeClient()),
+                patch("slack.bridge.load_preferences", side_effect=lambda: load_preferences(path)),
+                patch("slack.bridge.apply_feedback", side_effect=save_for_test),
+            ):
+                before = build_digest("C123", "electrical_engineer", "dvt", "U1")
+                rated = build_digest("C123", "electrical_engineer", "dvt", "U1", "M007", "down")
+                next_digest = build_digest("C123", "electrical_engineer", "dvt", "U1")
+                other = build_digest("C123", "electrical_engineer", "dvt", "U2")
+                undone = build_digest("C123", "electrical_engineer", "dvt", "U1", "M007", "down")
+                after_undo = build_digest("C123", "electrical_engineer", "dvt", "U1")
+
+        self.assertIn("M007", [item["id"] for item in before["top"]])
+        self.assertNotIn("M007", [item["id"] for item in next_digest["top"]])
+        self.assertIn("sensor-noise", rated["feedback_notice"])
+        self.assertIn("sensor-noise", next_digest["adjustment"])
+        self.assertIn("未进入 Top 5", next_digest["adjustment"])
+        self.assertEqual(other["top"], before["top"])
+        self.assertNotIn("M007", undone["votes"])
+        self.assertEqual(after_undo["top"], before["top"])
+
     def test_live_digest_citations_resolve_to_ranked_sources(self) -> None:
         messages = json.loads((ROOT / "data" / "mock_messages.json").read_text(encoding="utf-8"))
         for index, message in enumerate(messages, 1):
@@ -71,9 +107,10 @@ class BridgeTests(unittest.TestCase):
                 changed = build_digest("C123", "electrical_engineer", "dvt", "U1", "M011", "up")
                 other = build_digest("C123", "electrical_engineer", "dvt", "U2")
 
-        self.assertEqual(changed["movement"], {"id": "M011", "direction": "up", "before": 4, "after": 2})
+        self.assertEqual(changed["movement"], {"id": "M011", "direction": "up", "before": 4, "after": 1})
         self.assertEqual(first["top"], other["top"])
         self.assertNotEqual(first["top"], changed["top"])
+        self.assertEqual(changed["votes"]["M011"], "up")
         self.assertEqual(len(changed["top"]), 5)
 
 

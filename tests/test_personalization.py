@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from digest.config_loader import load_phase_weights, load_role_weights
-from digest.personalization import apply_feedback, load_preferences, role_preferences
+from digest.personalization import apply_feedback, feedback_state, load_preferences, role_preferences
 from digest.ranker import rank_messages
 from digest.tagger import tag_messages
 
@@ -51,17 +51,47 @@ class PersonalizationTests(unittest.TestCase):
             self.assertEqual(before_rank, 4)
             self.assertEqual(after_rank, 2)
 
-    def test_down_feedback_is_bounded(self) -> None:
-        message = {"id": "M006", "tags": ["SUPPLY_CHAIN"]}
+    def test_vote_can_be_undone_and_switched(self) -> None:
+        message = {"id": "M006", "tags": ["SUPPLY_CHAIN"], "topic": "supply-chain"}
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "preferences.json"
-            for _ in range(10):
-                apply_feedback("supply_chain", message, "down", path=path)
+            apply_feedback("supply_chain", message, "down", path=path)
+            preferences, boosts = role_preferences(load_preferences(path), "supply_chain")
+            votes, topics, _ = feedback_state(load_preferences(path), "supply_chain")
+            self.assertEqual((preferences["SUPPLY_CHAIN"], boosts["M006"], topics["supply-chain"]), (0.85, -0.15, -0.35))
+            self.assertEqual(votes["M006"], "down")
+
+            apply_feedback("supply_chain", message, "down", path=path)
             preferences, boosts = role_preferences(
                 load_preferences(path), "supply_chain"
             )
-            self.assertEqual(preferences["SUPPLY_CHAIN"], 0.4)
-            self.assertEqual(boosts["M006"], -0.45)
+            votes, topics, _ = feedback_state(load_preferences(path), "supply_chain")
+            self.assertEqual(preferences["SUPPLY_CHAIN"], 1.0)
+            self.assertNotIn("M006", boosts)
+            self.assertNotIn("supply-chain", topics)
+            self.assertNotIn("M006", votes)
+
+            apply_feedback("supply_chain", message, "up", path=path)
+            apply_feedback("supply_chain", message, "down", path=path)
+            votes, topics, _ = feedback_state(load_preferences(path), "supply_chain")
+            self.assertEqual(votes["M006"], "down")
+            self.assertEqual(topics["supply-chain"], -0.35)
+
+    def test_undo_after_weight_saturation_restores_correct_value(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "preferences.json"
+            messages = [
+                {"id": f"M{i:03d}", "tags": ["TEST_RESULT"], "topic": "sensor-noise"}
+                for i in range(1, 6)
+            ]
+            for message in messages:
+                apply_feedback("U1:electrical_engineer", message, "up", path=path)
+            apply_feedback("U1:electrical_engineer", messages[0], "up", path=path)
+            preferences, _ = role_preferences(load_preferences(path), "U1:electrical_engineer")
+            self.assertEqual(preferences["TEST_RESULT"], 1.6)
+            apply_feedback("U1:electrical_engineer", messages[1], "up", path=path)
+            preferences, _ = role_preferences(load_preferences(path), "U1:electrical_engineer")
+            self.assertEqual(preferences["TEST_RESULT"], 1.45)
 
 
 if __name__ == "__main__":

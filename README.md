@@ -32,7 +32,7 @@ In the Slack channel you want to use (for example `#project-atlas`), invite the 
 /digest pm pvt
 ```
 
-`/seed-atlas` adds the 18 sample updates to that channel. It skips seed IDs already present, so repeating it does not repost them. The seeded messages use today's Slack timestamps; they are demo history, not backdated conversations. `/digest` reads that channel's actual history and posts a digest visible to the channel, with a 👍 Useful and 👎 Not relevant button for each selected item. Each citation, such as `M001`, links back to the exact Slack source message. Click a button to save *your* preference and immediately post a reranked digest. The private confirmation reports the item's before/after rank; its position may stay the same if it was already at the top or the bounded feedback is insufficient to pass another item. Keep `slack run` running throughout the recording. No webhook is required for this path.
+`/seed-atlas` adds the 18 sample updates to that channel. It skips seed IDs already present, so repeating it does not repost them. The seeded messages use today's Slack timestamps; they are demo history, not backdated conversations. `/digest` reads that channel's actual history and sends a **personal, only-visible-to-you** Digest in Slack. Each citation links to the original source message, but feedback stays on the Digest: click 👎 on M007, see the selected button and a private confirmation in the same card, then run `/digest electrical_engineer dvt` again to preview the next ranking. The next card explains the actual M007 outcome (for example, that it left the Top 5) and shows a `Tuned by your feedback` cue. Click the selected button again to undo, or the opposite button to switch. If a rated item falls out of the Top 5, its rating control remains available below the list for undo. This preview uses the current channel history with updated preferences; it does **not** pretend to have tomorrow's messages. Keep `slack run` running throughout the recording. No webhook is required for this path.
 
 For a deterministic local demo without Slack:
 
@@ -56,7 +56,7 @@ Role weights ───────────────┐                   
 Phase weights ──────────────┼──────────────> Rank messages ─> Top 5
 Per-user preferences ───────┘                        │           │
                                                      │           ▼
-Slack 👍/👎 ─> preference update ─────────────────────┘    Cited digest ─> Slack
+Private Digest 👍/👎 ─> preference update ────────────┘    Cited digest ─> Slack
                                                           │
                                                           ▼
                                                 Citation/faithfulness check
@@ -70,11 +70,11 @@ The deterministic tagger recognizes `BOM_CHANGE`, `ECO`, `BLOCKER`, `SCHEDULE`, 
 
 ## 5. Personalization
 
-`config/roles.json` and `config/phases.json` define role and phase weights. For a message's strongest tag, the ranking score is `role_weight × phase_weight × preference_weight + 0.3 × urgency + explicit_item_boost`. Inspect weights with `python3 demo.py --role electrical_engineer --phase dvt --show-weights`; inspect the ordered IDs and reasons with `--show-ranking`. The mock data and phase weights make both role and EVT/DVT/PVT differences visible.
+`config/roles.json` and `config/phases.json` define role and phase weights. For a message's strongest tag, the ranking score is `role_weight × phase_weight × preference_weight + 0.3 × urgency + explicit_item_boost + topic_boost`. Inspect weights with `python3 demo.py --role electrical_engineer --phase dvt --show-weights`; inspect the ordered IDs and reasons with `--show-ranking`. The mock data and phase weights make both role and EVT/DVT/PVT differences visible.
 
 ## 6. Adaptive Feedback
 
-A 👍 or 👎 changes the selected item's tag affinities by ±0.15 and its explicit boost by ±0.15, within bounds. Interactive Slack profiles are keyed by Slack user ID plus role, so one person's click does not change another person's ranking. Feedback is persisted in ignored `data/runtime/preferences.json`; `data/preferences.json` provides only initial values. The local CLI feedback demo is `python3 demo.py --feedback M011:up --role electrical_engineer`.
+A 👍 or 👎 changes the selected item's tag affinities by ±0.15, its explicit boost by ±0.15, and its topic boost by ±0.35, within bounds. M007 is classified as `sensor-noise`, so its topic feedback also affects future sensor-noise updates. Repeating the same vote undoes it; clicking the opposite vote switches it. Interactive Slack profiles are keyed by Slack user ID plus role, so one person's click does not change another person's ranking. The private Digest updates its selected state immediately, while ranking changes appear on the next `/digest`. Feedback is persisted in ignored `data/runtime/preferences.json`; `data/preferences.json` provides only initial values. The local CLI feedback demo is `python3 demo.py --feedback M011:up --role electrical_engineer`.
 
 ## 7. Grounding / Citations
 

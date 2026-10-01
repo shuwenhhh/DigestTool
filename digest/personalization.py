@@ -13,10 +13,13 @@ DEFAULT_PREFERENCES_PATH = ROOT / "data" / "runtime" / "preferences.json"
 INITIAL_PREFERENCES_PATH = ROOT / "data" / "preferences.json"
 TAG_STEP = 0.15
 MESSAGE_STEP = 0.15
+TOPIC_STEP = 0.35
 MIN_TAG_WEIGHT = 0.4
 MAX_TAG_WEIGHT = 1.6
 MIN_MESSAGE_BOOST = -0.45
 MAX_MESSAGE_BOOST = 0.45
+MIN_TOPIC_BOOST = -1.05
+MAX_TOPIC_BOOST = 1.05
 
 
 def load_preferences(path: Path = DEFAULT_PREFERENCES_PATH) -> dict:
@@ -33,13 +36,22 @@ def role_preferences(data: dict, role: str) -> tuple[dict[str, float], dict[str,
     tag_preferences = {
         key: float(value)
         for key, value in profile.items()
-        if key != "_message_boosts"
+        if not key.startswith("_")
     }
     message_boosts = {
         key: float(value)
         for key, value in profile.get("_message_boosts", {}).items()
     }
     return tag_preferences, message_boosts
+
+
+def feedback_state(data: dict, role: str) -> tuple[dict[str, str], dict[str, float], dict]:
+    profile = data.get(role, {})
+    return (
+        dict(profile.get("_votes", {})),
+        {key: float(value) for key, value in profile.get("_topic_boosts", {}).items()},
+        dict(profile.get("_last_feedback", {})),
+    )
 
 
 def _save_preferences(data: dict, path: Path) -> None:
@@ -64,24 +76,51 @@ def apply_feedback(
     direction: str,
     path: Path = DEFAULT_PREFERENCES_PATH,
 ) -> list[tuple[str, float, float]]:
-    """Update topic affinity plus a small explicit boost for the rated item."""
+    """Toggle or switch a per-user vote; applying the same vote again undoes it."""
     if direction not in {"up", "down"}:
         raise ValueError("Feedback direction must be 'up' or 'down'")
-    delta = TAG_STEP if direction == "up" else -TAG_STEP
-    message_delta = MESSAGE_STEP if direction == "up" else -MESSAGE_STEP
     data = load_preferences(path)
     profile = data.setdefault(role, {})
+    votes = profile.setdefault("_votes", {})
+    previous = votes.get(message["id"])
+    selected = None if previous == direction else direction
+    old_sign = {None: 0, "up": 1, "down": -1}[previous]
+    new_sign = {None: 0, "up": 1, "down": -1}[selected]
+    change = new_sign - old_sign
+    if selected:
+        votes[message["id"]] = selected
+    else:
+        votes.pop(message["id"], None)
     changes: list[tuple[str, float, float]] = []
+    raw_tags = profile.setdefault("_raw_tag_weights", {})
     for tag in message.get("tags", []):
         old = float(profile.get(tag, 1.0))
-        new = round(min(MAX_TAG_WEIGHT, max(MIN_TAG_WEIGHT, old + delta)), 2)
+        raw = round(float(raw_tags.get(tag, old)) + TAG_STEP * change, 2)
+        raw_tags[tag] = raw
+        new = round(min(MAX_TAG_WEIGHT, max(MIN_TAG_WEIGHT, raw)), 2)
         profile[tag] = new
         changes.append((tag, old, new))
     boosts = profile.setdefault("_message_boosts", {})
     old_boost = float(boosts.get(message["id"], 0.0))
-    boosts[message["id"]] = round(
-        min(MAX_MESSAGE_BOOST, max(MIN_MESSAGE_BOOST, old_boost + message_delta)),
-        2,
-    )
+    raw_boosts = profile.setdefault("_raw_message_boosts", {})
+    raw_boost = round(float(raw_boosts.get(message["id"], old_boost)) + MESSAGE_STEP * change, 2)
+    raw_boosts[message["id"]] = raw_boost
+    new_boost = round(min(MAX_MESSAGE_BOOST, max(MIN_MESSAGE_BOOST, raw_boost)), 2)
+    if new_boost:
+        boosts[message["id"]] = new_boost
+    else:
+        boosts.pop(message["id"], None)
+    topic = message.get("topic", "general")
+    topics = profile.setdefault("_topic_boosts", {})
+    old_topic = float(topics.get(topic, 0.0))
+    raw_topics = profile.setdefault("_raw_topic_boosts", {})
+    raw_topic = round(float(raw_topics.get(topic, old_topic)) + TOPIC_STEP * change, 2)
+    raw_topics[topic] = raw_topic
+    new_topic = round(min(MAX_TOPIC_BOOST, max(MIN_TOPIC_BOOST, raw_topic)), 2)
+    if new_topic:
+        topics[topic] = new_topic
+    else:
+        topics.pop(topic, None)
+    profile["_last_feedback"] = {"id": message["id"], "topic": topic, "state": selected or "neutral"}
     _save_preferences(data, path)
     return changes

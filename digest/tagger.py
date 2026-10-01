@@ -63,7 +63,8 @@ def tag_message(message: dict) -> dict:
         for tag in TAGS
         if any(keyword in lower for keyword in TAG_KEYWORDS[tag])
     ]
-    return {**message, "tags": tags, "urgency": _urgency(message["text"])}
+    topic = "sensor-noise" if "sensor noise" in lower else (tags[0].lower().replace("_", "-") if tags else "general")
+    return {**message, "tags": tags, "topic": topic, "urgency": _urgency(message["text"])}
 
 
 def tag_messages(messages: Iterable[dict]) -> list[dict]:
