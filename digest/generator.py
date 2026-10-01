@@ -43,7 +43,7 @@ def _section_for(message: dict) -> str:
 def generate_digest(
     top_messages: Iterable[dict], role_name: str, phase_name: str
 ) -> str:
-    """Render only supplied message text, with a source ID on every bullet."""
+    """Render supplied message text with an ID linked to its source when available."""
     messages = list(top_messages)
     if len(messages) > 5:
         raise ValueError("Digest generator accepts at most five ranked messages")
@@ -58,5 +58,8 @@ def generate_digest(
         lines.extend(["", f"## {section}"])
         for message in items:
             # Verbatim source text is intentional: templates cannot invent facts.
-            lines.append(f"- {message['text']} [{message['id']}]")
+            citation = f"[{message['id']}]"
+            if message.get("source_url"):
+                citation += f"({message['source_url']})"
+            lines.append(f"- {message['text']} {citation}")
     return "\n".join(lines)

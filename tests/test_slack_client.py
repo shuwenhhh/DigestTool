@@ -48,6 +48,10 @@ class RealSlackClientTests(unittest.TestCase):
         self.assertEqual(messages[0]["id"], "M001")
         self.assertEqual(messages[0]["author"], "Sarah")
         self.assertEqual(messages[0]["text"], "PCB failed validation.")
+        self.assertEqual(
+            messages[0]["source_url"],
+            "https://app.slack.com/archives/C123/p1760000000000100",
+        )
 
     def test_retries_then_uses_cached_channel_data(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

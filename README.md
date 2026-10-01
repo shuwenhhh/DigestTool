@@ -32,7 +32,7 @@ In the Slack channel you want to use (for example `#project-atlas`), invite the 
 /digest pm pvt
 ```
 
-`/seed-atlas` adds the 18 sample updates to that channel. It skips seed IDs already present, so repeating it does not repost them. The seeded messages use today's Slack timestamps; they are demo history, not backdated conversations. `/digest` reads that channel's actual history and posts a digest visible to the channel, with a 👍 Useful and 👎 Not relevant button for each selected item. Click a button to save *your* preference and immediately post a reranked digest. The private confirmation reports the item's before/after rank; its position may stay the same if it was already at the top or the bounded feedback is insufficient to pass another item. Keep `slack run` running throughout the recording. No webhook is required for this path.
+`/seed-atlas` adds the 18 sample updates to that channel. It skips seed IDs already present, so repeating it does not repost them. The seeded messages use today's Slack timestamps; they are demo history, not backdated conversations. `/digest` reads that channel's actual history and posts a digest visible to the channel, with a 👍 Useful and 👎 Not relevant button for each selected item. Each citation, such as `M001`, links back to the exact Slack source message. Click a button to save *your* preference and immediately post a reranked digest. The private confirmation reports the item's before/after rank; its position may stay the same if it was already at the top or the bounded feedback is insufficient to pass another item. Keep `slack run` running throughout the recording. No webhook is required for this path.
 
 For a deterministic local demo without Slack:
 
@@ -78,7 +78,7 @@ A 👍 or 👎 changes the selected item's tag affinities by ±0.15 and its expl
 
 ## 7. Grounding / Citations
 
-The generator only receives the five ranked source messages and copies each update's text verbatim. Every digest bullet ends in a source ID such as `[M001]` (or an `S...` ID for an ordinary Slack message). This is template-based generation, not an LLM making unsupported claims. The evaluator checks both citation existence and exact source-text match. The real Slack reader excludes prior EverCurrent digests to prevent recursive summaries and deduplicates repeated seed IDs.
+The generator only receives the five ranked source messages and copies each update's text verbatim. Every digest bullet ends in a source ID such as `[M001]` (or an `S...` ID for an ordinary Slack message). For live Slack history, that ID is a clickable permalink to the original message. Offline mock messages have no Slack URL, so their IDs remain plain references. This is template-based generation, not an LLM making unsupported claims. The evaluator checks citation existence, exact source-text match, and—for live sources—that the linked URL matches the cited source. The real Slack reader excludes prior EverCurrent digests to prevent recursive summaries and deduplicates repeated seed IDs.
 
 ## 8. Failure Handling
 

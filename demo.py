@@ -196,6 +196,8 @@ def main() -> None:
         if args.evaluate:
             result = evaluate_digest(digest, messages)
             print(f"\nCitation validity: {result['valid_citations']}/{result['total_bullets']}")
+            if result["linkable_sources"]:
+                print(f"Traceable links: {result['traceable_links']}/{result['total_bullets']}")
             print(f"Faithfulness: {result['faithfulness']:.2f}")
         if args.slack:
             webhook_url = os.environ.get("SLACK_WEBHOOK_URL")

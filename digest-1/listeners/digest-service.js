@@ -12,7 +12,11 @@ export const generate = async ({ channel, role, phase, user, feedbackId, directi
   return JSON.parse(stdout);
 };
 
-export const formatForSlack = (markdown) => markdown.replace(/^#{1,2} (.+)$/gm, '*$1*').replace(/^\n{3,}/gm, '\n\n');
+export const formatForSlack = (markdown) =>
+  markdown
+    .replace(/^#{1,2} (.+)$/gm, '*$1*')
+    .replace(/\[([MS]\d+)\]\((https:\/\/[^\s)]+)\)/g, '<$2|$1>')
+    .replace(/^\n{3,}/gm, '\n\n');
 
 export const digestBlocks = (result) => [
   { type: 'section', text: { type: 'mrkdwn', text: formatForSlack(result.digest) } },

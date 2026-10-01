@@ -5,20 +5,34 @@ from __future__ import annotations
 import re
 
 
-CITATION = re.compile(r"\[([MS]\d+)\]$")
+CITATION = re.compile(r"\[([MS]\d+)\](?:\((https://[^\s)]+)\))?$")
 
 
 def evaluate_digest(digest: str, source_messages: list[dict]) -> dict:
-    sources = {message["id"]: message["text"] for message in source_messages}
+    sources = {message["id"]: message for message in source_messages}
     bullets = [line[2:] for line in digest.splitlines() if line.startswith("- ")]
     valid = 0
+    linked = 0
     for bullet in bullets:
         match = CITATION.search(bullet)
-        if match and sources.get(match.group(1)) == bullet[:match.start()].strip():
-            valid += 1
+        if not match:
+            continue
+        source = sources.get(match.group(1))
+        if source is None or source["text"] != bullet[:match.start()].strip():
+            continue
+        expected_url = source.get("source_url")
+        if expected_url and match.group(2) != expected_url:
+            continue
+        if not expected_url and match.group(2):
+            continue
+        valid += 1
+        if expected_url:
+            linked += 1
     total = len(bullets)
     return {
         "valid_citations": valid,
         "total_bullets": total,
+        "traceable_links": linked,
+        "linkable_sources": sum(bool(message.get("source_url")) for message in source_messages),
         "faithfulness": valid / total if total else 0.0,
     }

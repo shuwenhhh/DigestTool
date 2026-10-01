@@ -142,5 +142,6 @@ class RealSlackClient:
             "author": author,
             "role": role,
             "timestamp": timestamp,
+            "source_url": f"https://app.slack.com/archives/{channel_id}/p{raw['ts'].replace('.', '')}",
             "text": text,
         }

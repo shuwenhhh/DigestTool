@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from digest.evaluator import evaluate_digest
 from digest.personalization import apply_feedback, load_preferences
 from slack.bridge import build_digest
 
@@ -12,6 +13,25 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class BridgeTests(unittest.TestCase):
+    def test_live_digest_citations_resolve_to_ranked_sources(self) -> None:
+        messages = json.loads((ROOT / "data" / "mock_messages.json").read_text(encoding="utf-8"))
+        for index, message in enumerate(messages, 1):
+            message["source_url"] = f"https://app.slack.com/archives/C123/p1760000000{index:06d}"
+
+        class FakeClient:
+            stale = False
+
+            def fetch_messages(self, _channel, simulate_failure=False):
+                return messages
+
+        with patch("slack.bridge.RealSlackClient", return_value=FakeClient()):
+            result = build_digest("C123", "electrical_engineer", "dvt", "U1")
+
+        evaluation = evaluate_digest(result["digest"], messages)
+        self.assertEqual(evaluation["valid_citations"], 5)
+        self.assertEqual(evaluation["traceable_links"], 5)
+        self.assertEqual(evaluation["faithfulness"], 1.0)
+
     def test_cached_history_is_visibly_marked_stale(self) -> None:
         messages = json.loads((ROOT / "data" / "mock_messages.json").read_text(encoding="utf-8"))
 

@@ -33,6 +33,15 @@ class GeneratorTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "at most five"):
             generate_digest(messages, "PM", "DVT")
 
+    def test_real_slack_source_has_clickable_citation(self) -> None:
+        url = "https://app.slack.com/archives/C123/p1760000000000100"
+        digest = generate_digest(
+            [{"id": "M001", "text": "Thermal validation failed.", "source_url": url}],
+            "Electrical Engineer",
+            "DVT",
+        )
+        self.assertIn(f"- Thermal validation failed. [M001]({url})", digest)
+
 
 if __name__ == "__main__":
     unittest.main()

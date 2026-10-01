@@ -23,5 +23,9 @@ describe('digest feedback blocks', () => {
       phase: 'pvt',
     });
     assert.equal(formatForSlack('# Heading\n## Section'), '*Heading*\n*Section*');
+    assert.equal(
+      formatForSlack('- Update [M001](https://app.slack.com/archives/C123/p1760000000000100)'),
+      '- Update <https://app.slack.com/archives/C123/p1760000000000100|M001>',
+    );
   });
 });

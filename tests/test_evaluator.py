@@ -9,8 +9,24 @@ class EvaluatorTests(unittest.TestCase):
         digest = "# Digest\n- PCB failed validation. [M001]\n- Invented update. [M001]"
         self.assertEqual(
             evaluate_digest(digest, sources),
-            {"valid_citations": 1, "total_bullets": 2, "faithfulness": 0.5},
+            {
+                "valid_citations": 1,
+                "total_bullets": 2,
+                "traceable_links": 0,
+                "linkable_sources": 0,
+                "faithfulness": 0.5,
+            },
         )
+
+    def test_link_must_point_to_the_same_source_message(self) -> None:
+        url = "https://app.slack.com/archives/C123/p1760000000000100"
+        sources = [{"id": "M001", "text": "PCB failed validation.", "source_url": url}]
+        valid = f"- PCB failed validation. [M001]({url})"
+        invalid = "- PCB failed validation. [M001](https://app.slack.com/archives/C123/p9999999999999999)"
+        result = evaluate_digest(f"{valid}\n{invalid}", sources)
+        self.assertEqual(result["valid_citations"], 1)
+        self.assertEqual(result["traceable_links"], 1)
+        self.assertEqual(result["faithfulness"], 0.5)
 
 
 if __name__ == "__main__":
