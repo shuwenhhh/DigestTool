@@ -10,6 +10,7 @@ from pathlib import Path
 
 from digest.config_loader import load_phase_weights, load_role_weights
 from digest.generator import generate_digest
+from digest.evaluator import evaluate_digest
 from digest.personalization import apply_feedback, load_preferences, role_preferences
 from digest.ranker import rank_messages
 from digest.tagger import tag_messages
@@ -62,13 +63,26 @@ def parse_args() -> argparse.Namespace:
         metavar="CHANNEL_ID",
         help="Generate from real Slack channel history (requires SLACK_BOT_TOKEN).",
     )
+    parser.add_argument("--simulate-slack-failure", action="store_true")
+    parser.add_argument("--evaluate", action="store_true")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    if args.evaluate:
+        args.role = args.role or "electrical_engineer"
+        args.phase = args.phase or "dvt"
     try:
-        messages = load_messages(args.slack_channel)
+        if args.simulate_slack_failure:
+            if not args.slack_channel:
+                raise SystemExit("--simulate-slack-failure requires --slack-channel")
+            client = RealSlackClient()
+            messages = client.fetch_messages(args.slack_channel, simulate_failure=True)
+            stale = client.stale
+        else:
+            messages = load_messages(args.slack_channel)
+            stale = False
     except SlackClientError as error:
         raise SystemExit(f"Slack history fetch failed: {error}") from error
     tagged_messages = tag_messages(messages)
@@ -175,8 +189,14 @@ def main() -> None:
             message_boosts,
         )
         digest = generate_digest(ranked[:5], role_name, phase_name)
+        if stale:
+            digest = "⚠️ STALE DATA — Slack unavailable. Using cached data.\n\n" + digest
         print()
         print(digest)
+        if args.evaluate:
+            result = evaluate_digest(digest, messages)
+            print(f"\nCitation validity: {result['valid_citations']}/{result['total_bullets']}")
+            print(f"Faithfulness: {result['faithfulness']:.2f}")
         if args.slack:
             webhook_url = os.environ.get("SLACK_WEBHOOK_URL")
             if not webhook_url:

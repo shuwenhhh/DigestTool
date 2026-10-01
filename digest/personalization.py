@@ -9,7 +9,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_PREFERENCES_PATH = ROOT / "data" / "preferences.json"
+DEFAULT_PREFERENCES_PATH = ROOT / "data" / "runtime" / "preferences.json"
+INITIAL_PREFERENCES_PATH = ROOT / "data" / "preferences.json"
 TAG_STEP = 0.15
 MESSAGE_STEP = 0.15
 MIN_TAG_WEIGHT = 0.4
@@ -20,7 +21,9 @@ MAX_MESSAGE_BOOST = 0.45
 
 def load_preferences(path: Path = DEFAULT_PREFERENCES_PATH) -> dict:
     if not path.exists():
-        return {}
+        if path != DEFAULT_PREFERENCES_PATH:
+            return {}
+        path = INITIAL_PREFERENCES_PATH
     with path.open(encoding="utf-8") as handle:
         return json.load(handle)
 

@@ -1,10 +1,5 @@
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { fileURLToPath } from 'node:url';
+import { generate, postDigest } from '../digest-service.js';
 
-const runFile = promisify(execFile);
-const projectRoot = new URL('../../../', import.meta.url);
-const demoPath = fileURLToPath(new URL('demo.py', projectRoot));
 const roleAliases = new Map([
   ['electrical_engineer', 'electrical_engineer'],
   ['electrical engineer', 'electrical_engineer'],
@@ -18,22 +13,18 @@ const roleAliases = new Map([
 ]);
 const phases = new Set(['evt', 'dvt', 'pvt']);
 
-const usage = 'Usage: `/digest [role] [phase]` — for example `/digest supply_chain dvt` or `/digest Electrical Engineer`.';
+const usage =
+  'Usage: `/digest [role] [phase]` — for example `/digest supply_chain dvt` or `/digest Electrical Engineer`.';
 
 const parseProfile = (text) => {
-  const words = text
-    .replaceAll('`', '')
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean);
+  const words = text.replaceAll('`', '').trim().toLowerCase().split(/\s+/).filter(Boolean);
   let phase = 'dvt';
   if (phases.has(words.at(-1))) phase = words.pop();
   const roleInput = words.join(' ') || 'electrical_engineer';
   return { role: roleAliases.get(roleInput), phase };
 };
 
-const digestCommandCallback = async ({ ack, command, respond, logger }) => {
+const digestCommandCallback = async ({ ack, command, client, respond, logger }) => {
   await ack();
   const { role, phase } = parseProfile(command.text);
 
@@ -43,22 +34,18 @@ const digestCommandCallback = async ({ ack, command, respond, logger }) => {
   }
 
   try {
-    const { stdout } = await runFile('python3', [
-      demoPath,
-      '--role',
+    const result = await generate({
+      channel: command.channel_id,
       role,
-      '--phase',
       phase,
-      '--slack-channel',
-      command.channel_id,
-    ]);
-    const digest = stdout.replace(/^Loaded \d+ Slack messages\.\n\n/, '').trim();
-    await respond({ response_type: 'in_channel', text: digest });
+      user: command.user_id,
+    });
+    await postDigest(client, command.channel_id, result);
   } catch (error) {
     logger.error(error);
     await respond({
       response_type: 'ephemeral',
-      text: 'Digest generation failed. Please try again after the local app restarts.',
+      text: error.stderr?.trim() || 'Digest generation failed. Check the local app logs.',
     });
   }
 };
