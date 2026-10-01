@@ -58,17 +58,13 @@ def build_digest(
     tag_preferences, item_boosts = role_preferences(stored_profile, profile_key)
     feedback_notice = None
     if movement:
-        topic = last_feedback["topic"]
         state = last_feedback["state"]
         if state == "neutral":
-            feedback_notice = f"Feedback for {feedback_id} was undone. Your next Digest will use the restored preferences."
+            feedback_notice = f"Feedback for {feedback_id} was undone."
+        elif movement["before"] == movement["after"]:
+            feedback_notice = f"{feedback_id} remains #{movement['after']}."
         else:
-            trend = "show fewer" if state == "down" else "prioritize"
-            feedback_notice = (
-                f"Got it. Your next Digest will {trend} {topic} updates. "
-                f"{feedback_id} overall rank: #{movement['before']} → #{movement['after']}. "
-                "Tap the selected button again to undo."
-            )
+            feedback_notice = f"{feedback_id} moved from #{movement['before']} to #{movement['after']}."
 
     adjustment = None
     if last_feedback and last_feedback.get("state") != "neutral":
@@ -76,10 +72,10 @@ def build_digest(
         current = next((i for i, item in enumerate(ranked, 1) if item["id"] == last_id), None)
         if current:
             trend = "weighted lower" if last_feedback["state"] == "down" else "weighted higher"
-            outcome = "outside the Top 5" if current > 5 else f"in the Top 5 at #{current}"
+            outcome = " (outside the Top 5)" if current > 5 else ""
             adjustment = (
                 f"Adjusted for your feedback: {last_feedback['topic']} updates are {trend}. "
-                f"{last_id} now ranks #{current}, {outcome}."
+                f"{last_id} now ranks #{current}{outcome}."
             )
 
     top = ranked[:5]

@@ -22,8 +22,19 @@ class GeneratorTests(unittest.TestCase):
         bullets = [line for line in digest.splitlines() if line.startswith("- ")]
         self.assertEqual(len(bullets), 2)
         self.assertTrue(all(re.search(r"\[M\d{3}\]$", line) for line in bullets))
-        for message in messages:
-            self.assertIn(f"- {message['text']} [{message['id']}]", digest)
+        for rank, message in enumerate(messages, start=1):
+            self.assertIn(f"- #{rank} · {message['text']} [{message['id']}]", digest)
+
+    def test_overall_ranks_remain_visible_across_sections(self) -> None:
+        messages = [
+            {"id": "M001", "text": "First blocker.", "tags": ["BLOCKER"]},
+            {"id": "M002", "text": "Second test.", "tags": ["TEST_RESULT"]},
+            {"id": "M003", "text": "Third blocker.", "tags": ["BLOCKER"]},
+        ]
+        digest = generate_digest(messages, "Electrical Engineer", "DVT")
+        self.assertIn("- #1 · First blocker. [M001]", digest)
+        self.assertIn("- #3 · Third blocker. [M003]", digest)
+        self.assertIn("- #2 · Second test. [M002]", digest)
 
     def test_rejects_more_than_top_five(self) -> None:
         messages = [
@@ -40,7 +51,7 @@ class GeneratorTests(unittest.TestCase):
             "Electrical Engineer",
             "DVT",
         )
-        self.assertIn(f"- Thermal validation failed. [M001]({url})", digest)
+        self.assertIn(f"- #1 · Thermal validation failed. [M001]({url})", digest)
 
 
 if __name__ == "__main__":

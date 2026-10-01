@@ -43,7 +43,7 @@ class BridgeTests(unittest.TestCase):
 
         self.assertIn("M007", [item["id"] for item in before["top"]])
         self.assertNotIn("M007", [item["id"] for item in next_digest["top"]])
-        self.assertIn("sensor-noise", rated["feedback_notice"])
+        self.assertIn("M007 moved from", rated["feedback_notice"])
         self.assertIn("sensor-noise", next_digest["adjustment"])
         self.assertIn("outside the Top 5", next_digest["adjustment"])
         self.assertIsNone(re.search(r"[\u4e00-\u9fff]", rated["feedback_notice"] + next_digest["adjustment"] + undone["feedback_notice"]))
@@ -107,9 +107,12 @@ class BridgeTests(unittest.TestCase):
             ):
                 first = build_digest("C123", "electrical_engineer", "dvt", "U1")
                 changed = build_digest("C123", "electrical_engineer", "dvt", "U1", "M011", "up")
+                next_digest = build_digest("C123", "electrical_engineer", "dvt", "U1")
                 other = build_digest("C123", "electrical_engineer", "dvt", "U2")
 
         self.assertEqual(changed["movement"], {"id": "M011", "direction": "up", "before": 4, "after": 1})
+        self.assertEqual(changed["feedback_notice"], "M011 moved from #4 to #1.")
+        self.assertIn("M011 now ranks #1.", next_digest["adjustment"])
         self.assertEqual(first["top"], other["top"])
         self.assertNotEqual(first["top"], changed["top"])
         self.assertEqual(changed["votes"]["M011"], "up")

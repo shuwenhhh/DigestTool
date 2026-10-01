@@ -6,6 +6,7 @@ import re
 
 
 CITATION = re.compile(r"\[([MS]\d+)\](?:\((https://[^\s)]+)\))?$")
+RANK_PREFIX = re.compile(r"^#\d+ · ")
 
 
 def evaluate_digest(digest: str, source_messages: list[dict]) -> dict:
@@ -18,7 +19,8 @@ def evaluate_digest(digest: str, source_messages: list[dict]) -> dict:
         if not match:
             continue
         source = sources.get(match.group(1))
-        if source is None or source["text"] != bullet[:match.start()].strip():
+        cited_text = RANK_PREFIX.sub("", bullet[:match.start()].strip())
+        if source is None or source["text"] != cited_text:
             continue
         expected_url = source.get("source_url")
         if expected_url and match.group(2) != expected_url:

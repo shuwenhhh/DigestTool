@@ -28,6 +28,11 @@ class EvaluatorTests(unittest.TestCase):
         self.assertEqual(result["traceable_links"], 1)
         self.assertEqual(result["faithfulness"], 0.5)
 
+    def test_rank_label_does_not_break_source_verification(self) -> None:
+        sources = [{"id": "M013", "text": "Firmware freeze moved."}]
+        result = evaluate_digest("- #3 · Firmware freeze moved. [M013]", sources)
+        self.assertEqual(result["valid_citations"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

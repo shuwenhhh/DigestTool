@@ -48,18 +48,18 @@ def generate_digest(
     if len(messages) > 5:
         raise ValueError("Digest generator accepts at most five ranked messages")
 
-    sections: OrderedDict[str, list[dict]] = OrderedDict()
-    for message in messages:
+    sections: OrderedDict[str, list[tuple[int, dict]]] = OrderedDict()
+    for rank, message in enumerate(messages, start=1):
         section = _section_for(message)
-        sections.setdefault(section, []).append(message)
+        sections.setdefault(section, []).append((rank, message))
 
     lines = ["# 🌅 EverCurrent Daily Digest", f"{role_name} · {phase_name}"]
     for section, items in sections.items():
         lines.extend(["", f"## {section}"])
-        for message in items:
+        for rank, message in items:
             # Verbatim source text is intentional: templates cannot invent facts.
             citation = f"[{message['id']}]"
             if message.get("source_url"):
                 citation += f"({message['source_url']})"
-            lines.append(f"- {message['text']} {citation}")
+            lines.append(f"- #{rank} · {message['text']} {citation}")
     return "\n".join(lines)
