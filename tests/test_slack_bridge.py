@@ -1,4 +1,5 @@
 import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -44,7 +45,8 @@ class BridgeTests(unittest.TestCase):
         self.assertNotIn("M007", [item["id"] for item in next_digest["top"]])
         self.assertIn("sensor-noise", rated["feedback_notice"])
         self.assertIn("sensor-noise", next_digest["adjustment"])
-        self.assertIn("未进入 Top 5", next_digest["adjustment"])
+        self.assertIn("outside the Top 5", next_digest["adjustment"])
+        self.assertIsNone(re.search(r"[\u4e00-\u9fff]", rated["feedback_notice"] + next_digest["adjustment"] + undone["feedback_notice"]))
         self.assertEqual(other["top"], before["top"])
         self.assertNotIn("M007", undone["votes"])
         self.assertEqual(after_undo["top"], before["top"])

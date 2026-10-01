@@ -61,13 +61,13 @@ def build_digest(
         topic = last_feedback["topic"]
         state = last_feedback["state"]
         if state == "neutral":
-            feedback_notice = f"已撤销 {feedback_id} 的反馈；下次 Digest 会按恢复后的偏好排序。"
+            feedback_notice = f"Feedback for {feedback_id} was undone. Your next Digest will use the restored preferences."
         else:
-            trend = "少推" if state == "down" else "优先推送"
+            trend = "show fewer" if state == "down" else "prioritize"
             feedback_notice = (
-                f"收到：下次 Digest 会{trend} {topic} 类更新。"
-                f"{feedback_id} 总排名 #{movement['before']} → #{movement['after']}。"
-                f"再点同一按钮可撤销。"
+                f"Got it. Your next Digest will {trend} {topic} updates. "
+                f"{feedback_id} overall rank: #{movement['before']} → #{movement['after']}. "
+                "Tap the selected button again to undo."
             )
 
     adjustment = None
@@ -75,9 +75,12 @@ def build_digest(
         last_id = last_feedback["id"]
         current = next((i for i, item in enumerate(ranked, 1) if item["id"] == last_id), None)
         if current:
-            trend = "降权" if last_feedback["state"] == "down" else "升权"
-            outcome = "未进入 Top 5" if current > 5 else f"位于 Top 5 的第 {current} 位"
-            adjustment = f"根据你的反馈：{last_feedback['topic']} 类更新已{trend}；{last_id} 当前总排名 #{current}，{outcome}。"
+            trend = "weighted lower" if last_feedback["state"] == "down" else "weighted higher"
+            outcome = "outside the Top 5" if current > 5 else f"in the Top 5 at #{current}"
+            adjustment = (
+                f"Adjusted for your feedback: {last_feedback['topic']} updates are {trend}. "
+                f"{last_id} now ranks #{current}, {outcome}."
+            )
 
     top = ranked[:5]
     digest = generate_digest(top, role_name, phase_name)
